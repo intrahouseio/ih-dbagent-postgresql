@@ -42,8 +42,8 @@ setInterval(sendSettingsRequest, 10800000); // 3 часа = 10800 сек
 main(process);
 
 async function main(channel) {
-  const initErr = client.init();
-  if (initErr) processExit(0, initErr); // Модуль sqlite3 не установлен
+ // const initErr = client.init();
+ //if (initErr) processExit(0, initErr); // Модуль sqlite3 не установлен
 
   try {
     if (!opt.dbPath) throw { message: 'Missing dbPath for logs!' };
@@ -51,12 +51,15 @@ async function main(channel) {
     await client.createPoolToDatabase(opt, logger);
     if (!client.pool) throw { message: 'Client creation Failed!' };
 
-    await client.run('PRAGMA journal_mode = WAL;');
-    await client.run('PRAGMA synchronous = NORMAL;');
+    //await client.run('PRAGMA journal_mode = WAL;');
+    //await client.run('PRAGMA synchronous = NORMAL;');
 
     for (const name of tableNames) {
-      await client.createTable(getCreateTableStr(name), name);
-      await client.run('CREATE INDEX IF NOT EXISTS ' + name + '_ts ON ' + name + ' (tsid);');
+      await client.query(getCreateTableStr(name), name);
+      await client.query(`SELECT create_hypertable(${name},'ts', 
+        chunk_time_interval => 86400000000, 
+        if_not_exists => TRUE);`);
+      //await client.query('CREATE INDEX IF NOT EXISTS ' + name + '_ts ON ' + name + ' (tsid);');
     }
 
     sendDBSize(); // Отправить статистику первый раз

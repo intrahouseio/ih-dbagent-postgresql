@@ -6,12 +6,9 @@
  * 
  */
 
-// const util = require('util');
 const path = require('path');
-
 const dbagent = require('./lib/index');
 const logger = require('./logger');
-const { promises: fs } = require('fs');
 
 // Извлечь имя log или писать в /var/log
 let opt;
