@@ -11,7 +11,6 @@
 
 const util = require('util');
 const path = require('path');
-// const schedule = require('node-schedule');
 const { promises: fs } = require('fs');
 
 const logger = require('./logger');
@@ -42,17 +41,12 @@ setInterval(sendSettingsRequest, 10800000); // 3 часа = 10800 сек
 main(process);
 
 async function main(channel) {
- // const initErr = client.init();
- //if (initErr) processExit(0, initErr); // Модуль sqlite3 не установлен
 
   try {
-    if (!opt.dbPath) throw { message: 'Missing dbPath for logs!' };
+    if (!opt.database) throw { message: 'Missing database name for logs!' };
 
     await client.createPoolToDatabase(opt, logger);
     if (!client.pool) throw { message: 'Client creation Failed!' };
-
-    //await client.run('PRAGMA journal_mode = WAL;');
-    //await client.run('PRAGMA synchronous = NORMAL;');
 
     for (const name of tableNames) {
       await client.query(getCreateTableStr(name), name);
@@ -62,8 +56,8 @@ async function main(channel) {
       //await client.query('CREATE INDEX IF NOT EXISTS ' + name + '_ts ON ' + name + ' (tsid);');
     }
 
-    sendDBSize(); // Отправить статистику первый раз
-    setInterval(async () => sendDBSize(), 300000); // 300 сек = 5 мин
+    //sendDBSize(); // Отправить статистику первый раз
+    //setInterval(async () => sendDBSize(), 300000); // 300 сек = 5 мин
 
     channel.on('message', ({ id, type, query, payload }) => {
       if (type == 'write') return write(id, query, payload);
@@ -253,13 +247,13 @@ function getCreateTableStr(tableName) {
   let result;
   switch (tableName) {
     case 'devicelog':
-      result = 'did TEXT,prop TEXT,val TEXT,txt TEXT, ts INTEGER NOT NULL,tsid TEXT,cmd TEXT,sender TEXT';
+      result = 'did TEXT,prop TEXT,val TEXT,txt TEXT, ts bigint NOT NULL,tsid TEXT,cmd TEXT,sender TEXT';
       break;
     case 'pluginlog':
-      result = 'unit TEXT, txt TEXT,level INTEGER, ts INTEGER NOT NULL, tsid TEXT, sender TEXT';
+      result = 'unit TEXT, txt TEXT,level INTEGER, ts bigint NOT NULL, tsid TEXT, sender TEXT';
       break;
     default:
-      result = 'tags TEXT, did TEXT, location TEXT, txt TEXT, level INTEGER, ts INTEGER NOT NULL,tsid TEXT,sender TEXT';
+      result = 'tags TEXT, did TEXT, location TEXT, txt TEXT, level INTEGER, ts bigint NOT NULL,tsid TEXT,sender TEXT';
   }
   return 'CREATE TABLE IF NOT EXISTS ' + tableName + ' (' + result + ')';
 }
