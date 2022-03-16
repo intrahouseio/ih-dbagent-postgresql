@@ -22,7 +22,7 @@
     }
   ],
   "p2": [
-    { "prop": "posgresql_options", "title": "Подключение к PosgreSQL", "type": "header", "size": "h6" },
+    { "prop": "posgresql_options", "title": "Подключение к PostgreSQL", "type": "header", "size": "h6" },
     { "prop": "active", "title": "Active", "type": "text", "hide": "1==1" },
     { "prop": "host", "title": "Host", "type": "input", "default": "localhost" },
     { "prop": "port", "title": "Port", "type": "input", "default": "5432" },

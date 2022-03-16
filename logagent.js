@@ -50,10 +50,12 @@ async function main(channel) {
 
     for (const name of tableNames) {
       await client.query(getCreateTableStr(name), name);
-      await client.query(`SELECT create_hypertable(${name},'ts', 
+      
+      await client.query(`SELECT create_hypertable('${name}','ts', 
         chunk_time_interval => 86400000000, 
         if_not_exists => TRUE);`);
-      //await client.query('CREATE INDEX IF NOT EXISTS ' + name + '_ts ON ' + name + ' (tsid);');
+        
+      await client.query('CREATE INDEX IF NOT EXISTS ' + name + '_tsid ON ' + name + ' (tsid);');
     }
 
     //sendDBSize(); // Отправить статистику первый раз
@@ -97,9 +99,9 @@ async function main(channel) {
 
     const values1 = values.map(i => `(${i})`).join(', ');
     const sql = 'INSERT INTO ' + table + ' (' + columns.join(',') + ') VALUES ' + values1;
-
+    logger.log('Write sql: ' + sql);
     try {
-      const changes = await client.run(sql);
+      const changes = await client.query(sql);
       logger.log('Write query id=' + id + ', changes=' + changes, 2);
     } catch (err) {
       sendError(id, err);
@@ -110,9 +112,9 @@ async function main(channel) {
     try {
       const sql = queryObj.sql ? queryObj.sql : '';
       if (!sql) throw { message: 'Missing query.sql in read query: ' + util.inspect(queryObj) };
-
+      logger.log('Read: '+sql );
       const result = await client.query(sql);
-      logger.log(sql + ' Result length = ' + result.length, 1);
+      logger.log(' Result length = ' + result.length);
 
       send({ id, query: queryObj, payload: result });
     } catch (err) {
@@ -190,7 +192,7 @@ async function main(channel) {
     if (err) msg = 'ERROR: ' + utils.getShortErrStr(err) + ' ';
 
     if (client && client.pool) {
-      client.pool.close();
+      client.pool.end();
       client.pool = null;
       msg += 'Close connection pool.';
     }
