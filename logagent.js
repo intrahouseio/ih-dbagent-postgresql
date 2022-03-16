@@ -17,7 +17,7 @@ const logger = require('./logger');
 const client = require('./lib/client');
 const utils = require('./lib/utils');
 
-const tableNames = ['mainlog', 'pluginlog', 'devicelog', 'authlog'];
+const tableNames = ['mainlog', 'pluginlog', 'devicelog'];
 
 let opt;
 try {
@@ -58,8 +58,8 @@ async function main(channel) {
       await client.query('CREATE INDEX IF NOT EXISTS ' + name + '_tsid ON ' + name + ' (tsid);');
     }
 
-    //sendDBSize(); // Отправить статистику первый раз
-    //setInterval(async () => sendDBSize(), 300000); // 300 сек = 5 мин
+    sendDBSize(); // Отправить статистику первый раз
+    setInterval(async () => sendDBSize(), 300000); // 300 сек = 5 мин
 
     channel.on('message', ({ id, type, query, payload }) => {
       if (type == 'write') return write(id, query, payload);
@@ -74,7 +74,7 @@ async function main(channel) {
     });
 
     process.on('exit', () => {
-      if (client && client.pool) client.pool.close();
+      if (client && client.pool) client.pool.end();
     });
   } catch (err) {
     processExit(1, err);
@@ -99,7 +99,7 @@ async function main(channel) {
 
     const values1 = values.map(i => `(${i})`).join(', ');
     const sql = 'INSERT INTO ' + table + ' (' + columns.join(',') + ') VALUES ' + values1;
-    logger.log('Write sql: ' + sql);
+    logger.log('Write sql: ' + sql, 2);
     try {
       const changes = await client.query(sql);
       logger.log('Write query id=' + id + ', changes=' + changes, 2);
@@ -127,7 +127,7 @@ async function main(channel) {
       const sql = queryObj.sql ? queryObj.sql : '';
       if (!sql) throw { message: 'Missing query.sql in run query: ' + util.inspect(queryObj) };
 
-      const changes = await client.run(sql);
+      const changes = await client.query(sql);
       logger.log(`${sql}  Row(s) affected: ${changes}`, 2);
     } catch (err) {
       sendError(id, err);
@@ -155,7 +155,7 @@ async function main(channel) {
     const sql = `DELETE FROM ${tableName} WHERE level = ${level} AND ts<${delTime}`;
 
     try {
-      const changes = await client.run(sql);
+      const changes = await client.query(sql);
       logger.log(`${tableName}  Level=${level} Archday=${archDay}  Row(s) deleted ${changes}`, 1);
     } catch (err) {
       sendError('delete', err);
@@ -171,7 +171,7 @@ async function main(channel) {
     const mes = 'Number of records exceeded ' + maxlogrecords + '!! All except the last day data was deleted!!';
 
     try {
-      const changes = await client.run(sql);
+      const changes = await client.query(sql);
       logger.log(`${tableName}  ${mes} Row(s) deleted ${changes}`, 1);
     } catch (err) {
       sendError('delete', err);
@@ -206,17 +206,14 @@ async function main(channel) {
   async function sendDBSize() {
     if (!process.connected) return;
 
-    const data = {};
-    let stats = await fs.stat(opt.dbPath);
-    let fileSize = stats['size'] / 1048576;
-    stats = await fs.stat(opt.dbPath + '-shm');
-    fileSize = fileSize + stats['size'] / 1048576;
-    stats = await fs.stat(opt.dbPath + '-wal');
-    fileSize = fileSize + stats['size'] / 1048576;
-    data.size = Math.round(fileSize * 100) / 100;
-
+    let data = {};
     const needDelete = [];
     for (const name of tableNames) {
+      const sqlQuery = `SELECT hypertable_size('${name}') ;`; 
+      const dbSizeArr = await client.query(sqlQuery);
+      let fileSize = dbSizeArr[0].hypertable_size/1024/1024;
+      fileSize = (parseInt(fileSize * 100)) / 100
+      data.size += fileSize;
       // const result = await client.query('SELECT Count (*) count From ' + name);
       // const count = result ? result[0].count : 0;
       const count = await getTableRecordsCount(name);

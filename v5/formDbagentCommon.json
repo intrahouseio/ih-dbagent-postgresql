@@ -32,7 +32,7 @@
   "p3": [
     { "prop": "project_options", "title": "Параметры проекта", "type": "header", "size": "h6" },
     { "prop": "database", "title": "Имя базы данных", "type": "input", "default": "ihdb" },
-    { "prop": "dbLimit", "title": "Лимит в МБ", "type": "input", "default": 1024},
+    { "prop": "dbLimit", "title": "Лимит в МБ", "type": "input", "default": 10240},
     { "prop": "loglevel", "title": "$LogLevel", "type": "droplist", "data": "loglevelList" }
   ],
   "p9": [
