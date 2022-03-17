@@ -206,14 +206,16 @@ async function main(channel) {
   async function sendDBSize() {
     if (!process.connected) return;
 
-    let data = {};
+    let data = {
+      size: 0
+    };
     const needDelete = [];
     for (const name of tableNames) {
       const sqlQuery = `SELECT hypertable_size('${name}') ;`; 
       const dbSizeArr = await client.query(sqlQuery);
       let fileSize = dbSizeArr[0].hypertable_size/1024/1024;
-      fileSize = (parseInt(fileSize * 100)) / 100
       data.size += fileSize;
+      logger.log("Tables size" + fileSize);
       // const result = await client.query('SELECT Count (*) count From ' + name);
       // const count = result ? result[0].count : 0;
       const count = await getTableRecordsCount(name);
@@ -223,7 +225,7 @@ async function main(channel) {
       data[name] = count;
       if (maxlogrecords > 0 && count > maxlogrecords && name != 'mainlog') needDelete.push(name);
     }
-
+    data.size = (parseInt(data.size * 100)) / 100;
     // Отправить фактическое состояние
     if (process.connected) process.send({ type: 'procinfo', data });
 
