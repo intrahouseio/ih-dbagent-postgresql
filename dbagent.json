@@ -5,5 +5,6 @@
             { "prop": "lastMaxCountWrite", "note": "Last Max Count Write", "vtype": "N" },
             { "prop": "lastMaxTimeRead", "note": "Last Max Time Read", "vtype": "N" },
             { "prop": "lastMaxCountRead", "note": "Last Max Count Read", "vtype": "N" }
-        ]
+        ],
+    "useIds": 1
   }
