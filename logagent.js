@@ -17,7 +17,7 @@ const logger = require('./logger');
 const client = require('./lib/client');
 const utils = require('./lib/utils');
 
-const tableNames = ['mainlog', 'pluginlog', 'devicelog'];
+const tableNames = ['mainlog', 'pluginlog', 'devicelog', 'iseclog'];
 
 let opt;
 try {
@@ -41,7 +41,6 @@ setInterval(sendSettingsRequest, 10800000); // 3 часа = 10800 сек
 main(process);
 
 async function main(channel) {
-
   try {
     if (!opt.database) throw { message: 'Missing database name for logs!' };
 
@@ -50,11 +49,11 @@ async function main(channel) {
 
     for (const name of tableNames) {
       await client.query(getCreateTableStr(name), name);
-      
+
       await client.query(`SELECT create_hypertable('${name}','ts', 
         chunk_time_interval => 86400000000, 
         if_not_exists => TRUE);`);
-        
+
       await client.query('CREATE INDEX IF NOT EXISTS ' + name + '_tsid ON ' + name + ' (tsid);');
     }
 
@@ -112,7 +111,7 @@ async function main(channel) {
     try {
       const sql = queryObj.sql ? queryObj.sql : '';
       if (!sql) throw { message: 'Missing query.sql in read query: ' + util.inspect(queryObj) };
-      logger.log('Read: '+sql );
+      logger.log('Read: ' + sql);
       const result = await client.query(sql);
       logger.log(' Result length = ' + result.length);
 
@@ -211,11 +210,11 @@ async function main(channel) {
     };
     const needDelete = [];
     for (const name of tableNames) {
-      const sqlQuery = `SELECT hypertable_size('${name}') ;`; 
+      const sqlQuery = `SELECT hypertable_size('${name}') ;`;
       const dbSizeArr = await client.query(sqlQuery);
-      let fileSize = dbSizeArr[0].hypertable_size/1024/1024;
+      let fileSize = dbSizeArr[0].hypertable_size / 1024 / 1024;
       data.size += fileSize;
-      logger.log("Tables size" + fileSize);
+      logger.log('Tables size' + fileSize);
       // const result = await client.query('SELECT Count (*) count From ' + name);
       // const count = result ? result[0].count : 0;
       const count = await getTableRecordsCount(name);
@@ -225,7 +224,7 @@ async function main(channel) {
       data[name] = count;
       if (maxlogrecords > 0 && count > maxlogrecords && name != 'mainlog') needDelete.push(name);
     }
-    data.size = (parseInt(data.size * 100)) / 100;
+    data.size = parseInt(data.size * 100) / 100;
     // Отправить фактическое состояние
     if (process.connected) process.send({ type: 'procinfo', data });
 
@@ -253,6 +252,12 @@ function getCreateTableStr(tableName) {
     case 'pluginlog':
       result = 'unit TEXT, txt TEXT,level INTEGER, ts bigint NOT NULL, tsid TEXT, sender TEXT';
       break;
+
+    case 'iseclog':
+      result =
+        'type TEXT, msg TEXT, subjid TEXT, subjname TEXT, result TEXT, changed TEXT, ip TEXT, class TEXT, app TEXT, version TEXT, objid TEXT, objname TEXT, level INTEGER, ts bigint NOT NULL, tsid TEXT,sender TEXT';
+      break;
+
     default:
       result = 'tags TEXT, did TEXT, location TEXT, txt TEXT, level INTEGER, ts bigint NOT NULL,tsid TEXT,sender TEXT';
   }
@@ -266,6 +271,26 @@ function getColumns(tableName) {
 
     case 'pluginlog':
       return ['unit', 'txt', 'level', 'ts', 'tsid', 'sender'];
+
+    case 'iseclog':
+      return [
+        'type',
+        'msg',
+        'subjid',
+        'subjname',
+        'objid',
+        'objname',
+        'result',
+        'changed',
+        'ip',
+        'app',
+        'class',
+        'version',
+        'level',
+        'ts',
+        'tsid',
+        'sender'
+      ];
 
     default:
       return ['tags', 'did', 'location', 'txt', 'level', 'ts', 'tsid', 'sender'];
