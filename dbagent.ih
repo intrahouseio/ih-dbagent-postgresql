@@ -2,5 +2,5 @@
     "id":"postgresql",
     "description":"Dbagent for PostgreSql",
     "cross":true,
-    "version":"5.0.19"
+    "version":"5.0.20"
 }
