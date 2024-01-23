@@ -21,6 +21,10 @@ try {
   // console.log('Start dbagent postgreSql. Options: ' + JSON.stringify(opt));
   logger.log('Start dbagent postgreSql. Options: ' + JSON.stringify(opt));
 
+  if (opt.bxpwd) {
+    opt.password = utils.decryptBx(opt.bxpwd);
+  }
+
   delete opt.logfile;
   delete opt.loglevel;
 
