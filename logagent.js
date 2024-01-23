@@ -17,7 +17,7 @@ const utils = require('./lib/utils');
 const logagent_main = require('./lib/logagentindex');
 
 try {
-  let opt = utils.getOptions(process.argv[2]);
+  let opt = utils.getOptions(process.argv[2], 'logagent');
 
   const logfile = opt.logfile || path.join(__dirname, 'ih_postgresql_logagent.log');
   const loglevel = opt.loglevel || 0;

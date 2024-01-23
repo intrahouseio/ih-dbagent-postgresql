@@ -11,7 +11,7 @@ const logger = require('./logger');
 const utils = require('./lib/utils');
 
 try {
-  let opt = utils.getOptions(process.argv[2]);
+  let opt = utils.getOptions(process.argv[2], 'dbagent');
 
   const logfile = opt.logfile || path.join(__dirname, 'ih_postgreSql.log');
   const loglevel = opt.loglevel || 0;
