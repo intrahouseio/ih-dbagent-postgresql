@@ -3,5 +3,5 @@
     "description":"Dbagent for PostgreSql",
     "cross":true,
     "configfile":1, 
-    "version":"5.0.31"
+    "version":"5.0.32"
 }
