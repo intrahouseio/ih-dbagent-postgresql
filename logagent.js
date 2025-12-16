@@ -20,7 +20,7 @@ try {
   let opt = utils.getOptions(process.argv[2], 'logagent');
 
   const logfile = opt.logfile || path.join(__dirname, 'ih_postgresql_logagent.log');
-  const loglevel = opt.loglevel || 0;
+  let loglevel = !opt.loglevel || isNaN(opt.loglevel) ? 0 : Number(opt.loglevel);
 
   logger.start(logfile, loglevel);
   // console.log('Start logagent postgresql. Options: ' + JSON.stringify(opt));

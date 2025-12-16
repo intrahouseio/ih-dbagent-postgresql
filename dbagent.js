@@ -14,7 +14,7 @@ try {
   let opt = utils.getOptions(process.argv[2], 'dbagent');
 
   const logfile = opt.logfile || path.join(__dirname, 'ih_postgreSql.log');
-  const loglevel = opt.loglevel || 0;
+  let loglevel = !opt.loglevel || isNaN(opt.loglevel) ? 0 : Number(opt.loglevel);
 
   logger.start(logfile, loglevel);
 
